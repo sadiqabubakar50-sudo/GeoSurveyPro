@@ -12,35 +12,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get repository files
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Java
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Gradle
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Extract project ZIP
+      - name: Install Android SDK packages
         run: |
-          unzip GeoSurveyPro_Android_Prototype.zip -d project
-          find project -name settings.gradle.kts
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Extract project
+        run: unzip GeoSurveyPro_Android_Prototype.zip -d project
 
       - name: Build APK
         run: |
           PROJECT_DIR=$(dirname "$(find project -name settings.gradle.kts | head -n 1)")
+          test -n "$PROJECT_DIR"
           cd "$PROJECT_DIR"
           gradle assembleDebug
 
-      - name: Save APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: GeoSurveyPro-APK
